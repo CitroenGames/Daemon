@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // tr_surface.c
+#include "framework/Omp.h"
 #include "tr_local.h"
 #include "gl_shader.h"
 #include "Material.h"
@@ -1239,8 +1240,7 @@ void Tess_SurfaceIQM( srfIQModel_t *surf ) {
 	float *modelTangent = model->tangents + 3 * firstVertex;
 	float *modelBitangent = model->bitangents + 3 * firstVertex;
 	float *modelTexcoord = model->texcoords + 2 * firstVertex;
-	shaderVertex_t *tessVertex = tess.verts + tess.numVertexes;
-	shaderVertex_t *lastVertex = tessVertex + surf->num_vertexes;
+	shaderVertex_t *modelTessVertex = tess.verts + tess.numVertexes;
 
 	// Deform the vertices by the lerped bones.
 	if ( model->num_joints > 0 && model->blendWeights && model->blendIndexes )
@@ -1252,70 +1252,81 @@ void Tess_SurfaceIQM( srfIQModel_t *surf ) {
 			byte *modelBlendIndex = model->blendIndexes + 4 * firstVertex;
 			byte *modelBlendWeight = model->blendWeights + 4 * firstVertex;
 
-			for ( ; tessVertex < lastVertex; tessVertex++,
-				modelPosition += 3, modelNormal += 3,
-				modelTangent += 3, modelBitangent += 3,
-				modelTexcoord += 2 )
+			auto task = [&]( const size_t& i ) -> void
 			{
+				shaderVertex_t *tessVertex = modelTessVertex + i;
+
+				float *vertexPosition = modelPosition + 3 * i;
+				float *vertexTexcoord = modelTexcoord + 2 * i;
+
+				byte *blendIndex = modelBlendIndex + 4 * i;
+				byte *lastBlendIndex = blendIndex + 4;
+				byte *blendWeight = modelBlendWeight + 4 * i;
+
 				vec3_t position = {};
 
-				byte *lastBlendIndex = modelBlendIndex + 4;
-
-				for ( ; modelBlendIndex < lastBlendIndex; modelBlendIndex++,
-					modelBlendWeight++ )
+				for ( ; blendIndex < lastBlendIndex; blendIndex++, blendWeight++ )
 				{
-					if ( *modelBlendWeight == 0 )
+					if ( *blendWeight == 0 )
 					{
 						continue;
 					}
 
-					float weight = *modelBlendWeight * weightFactor;
+					float weight = *blendWeight * weightFactor;
 					vec3_t tmp;
 
-					TransformPoint( &bones[ *modelBlendIndex ], modelPosition, tmp );
+					TransformPoint( &bones[ *blendIndex ], vertexPosition, tmp );
 					VectorMA( position, weight, tmp, position );
 				}
 
 				VectorCopy( position, tessVertex->xyz );
 
-				Vector2Copy( modelTexcoord, tessVertex->texCoords );
-			}
+				Vector2Copy( vertexTexcoord, tessVertex->texCoords );
+			};
+
+			Omp::Tasker( task, surf->num_vertexes );
 		}
 		else
 		{
 			byte *modelBlendIndex = model->blendIndexes + 4 * firstVertex;
 			byte *modelBlendWeight = model->blendWeights + 4 * firstVertex;
 
-			for ( ; tessVertex < lastVertex; tessVertex++,
-				modelPosition += 3, modelNormal += 3,
-				modelTangent += 3, modelBitangent += 3,
-				modelTexcoord += 2 )
+			auto task = [&]( const size_t& i ) -> void
 			{
+				shaderVertex_t *tessVertex = modelTessVertex + i;
+
+				float *vertexPosition = modelPosition + 3 * i;
+				float *vertexNormal = modelNormal + 3 * i;
+				float *vertexTangent = modelTangent + 3 * i;
+				float *vertexBitangent = modelBitangent + 3 * i;
+				float *vertexTexcoord = modelTexcoord + 2 * i;
+
+				byte *blendIndex = modelBlendIndex + 4 * i;
+				byte *lastBlendIndex = blendIndex + 4;
+				byte *blendWeight = modelBlendWeight + 4 * i;
+
 				vec3_t position = {}, tangent = {}, binormal = {}, normal = {};
 
-				byte *lastBlendIndex = modelBlendIndex + 4;
-
-				for ( ; modelBlendIndex < lastBlendIndex; modelBlendIndex++,
-					modelBlendWeight++ )
+				for ( ; blendIndex < lastBlendIndex; blendIndex++, blendWeight++ )
 				{
-					if ( *modelBlendWeight == 0 )
+					if ( *blendWeight == 0 )
 					{
 						continue;
 					}
 
-					float weight = *modelBlendWeight * weightFactor;
+					float weight = *blendWeight * weightFactor;
 					vec3_t tmp;
 
-					TransformPoint( &bones[ *modelBlendIndex ], modelPosition, tmp );
+					TransformPoint( &bones[ *blendIndex ], vertexPosition, tmp );
 					VectorMA( position, weight, tmp, position );
 
-					TransformNormalVector( &bones[ *modelBlendIndex ], modelNormal, tmp );
+					TransformNormalVector( &bones[ *blendIndex ], vertexNormal, tmp );
 					VectorMA( normal, weight, tmp, normal );
 
-					TransformNormalVector( &bones[ *modelBlendIndex ], modelTangent, tmp );
+					TransformNormalVector( &bones[ *blendIndex ], vertexTangent, tmp );
 					VectorMA( tangent, weight, tmp, tangent );
 
-					TransformNormalVector( &bones[ *modelBlendIndex ], modelBitangent, tmp );
+					TransformNormalVector( &bones[ *blendIndex ], vertexBitangent, tmp );
 					VectorMA( binormal, weight, tmp, binormal );
 				}
 
@@ -1326,25 +1337,34 @@ void Tess_SurfaceIQM( srfIQModel_t *surf ) {
 
 				R_TBNtoQtangentsFast( tangent, binormal, normal, tessVertex->qtangents );
 
-				Vector2Copy( modelTexcoord, tessVertex->texCoords );
-			}
+				Vector2Copy( vertexTexcoord, tessVertex->texCoords );
+			};
+
+			Omp::Tasker( task, surf->num_vertexes );
 		}
 	}
 	else
 	{
 		float scale = model->internalScale * backEnd.currentEntity->e.skeleton.scale;
 
-		for ( ; tessVertex < lastVertex; tessVertex++,
-			modelPosition += 3, modelNormal += 3,
-			modelTangent += 3, modelBitangent += 3,
-			modelTexcoord += 2 )
+		auto task = [&]( const size_t& i  ) -> void
 		{
-			VectorScale( modelPosition, scale, tessVertex->xyz );
+			shaderVertex_t *tessVertex = modelTessVertex + i;
 
-			R_TBNtoQtangentsFast( modelTangent, modelBitangent, modelNormal, tessVertex->qtangents );
+			float *vertexPosition = modelPosition + 3 * i;
+			float *vertexNormal = modelNormal + 3 * i;
+			float *vertexTangent = modelTangent + 3 * i;
+			float *vertexBitangent = modelBitangent + 3 * i;
+			float *vertexTexcoord = modelTexcoord + 2 * i;
 
-			Vector2Copy( modelTexcoord, tessVertex->texCoords );
-		}
+			VectorScale( vertexPosition, scale, tessVertex->xyz );
+
+			R_TBNtoQtangentsFast( vertexTangent, vertexBitangent, vertexNormal, tessVertex->qtangents );
+
+			Vector2Copy( vertexTexcoord, tessVertex->texCoords );
+		};
+
+		Omp::Tasker( task, surf->num_vertexes );
 	}
 
 	tess.numIndexes  += numIndexes;
