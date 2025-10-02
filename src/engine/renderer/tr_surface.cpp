@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // tr_surface.c
-#include "framework/Omp.h"
 #include "tr_local.h"
 #include "gl_shader.h"
 #include "Material.h"
@@ -1053,11 +1052,13 @@ static void Tess_SurfaceMD5( md5Surface_t *srf )
 	}
 
 	shaderVertex_t *modelTessVertex = tess.verts + tess.numVertexes;
+	const uint32_t numVerts = srf->numVerts;
 
 	// Deform the vertices by the lerped bones.
 	if ( tess.skipTangents )
 	{
-		auto task = [&]( size_t i ) -> void
+#pragma omp parallel for
+		for ( uint32_t i = 0; i < numVerts; i++ )
 		{
 			shaderVertex_t *tessVertex = modelTessVertex + i;
 			md5Vertex_t *vertex = surfaceVertex + i;
@@ -1081,13 +1082,12 @@ static void Tess_SurfaceMD5( md5Surface_t *srf )
 			VectorCopy( position, tessVertex->xyz );
 
 			Vector2Copy( vertex->texCoords, tessVertex->texCoords );
-		};
-
-		Omp::Tasker( task, srf->numVerts );
+		}
 	}
 	else
 	{
-		auto task = [&]( size_t i ) -> void
+#pragma omp parallel for
+		for ( uint32_t i = 0; i < numVerts; i++ )
 		{
 			shaderVertex_t *tessVertex = modelTessVertex + i;
 			md5Vertex_t *vertex = surfaceVertex + i;
@@ -1128,9 +1128,7 @@ static void Tess_SurfaceMD5( md5Surface_t *srf )
 			R_TBNtoQtangentsFast( tangent, binormal, normal, tessVertex->qtangents );
 
 			Vector2Copy( vertex->texCoords, tessVertex->texCoords );
-		};
-
-		Omp::Tasker( task, srf->numVerts );
+		}
 	}
 
 	tess.numIndexes += numIndexes;
@@ -1253,13 +1251,15 @@ void Tess_SurfaceIQM( srfIQModel_t *surf ) {
 	if ( model->num_joints > 0 && model->blendWeights && model->blendIndexes )
 	{
 		const float weightFactor = 1.0f / 255.0f;
+		const uint32_t numVertexes = surf->num_vertexes;
 
 		if ( tess.skipTangents )
 		{
 			byte *modelBlendIndex = model->blendIndexes + 4 * firstVertex;
 			byte *modelBlendWeight = model->blendWeights + 4 * firstVertex;
 
-			auto task = [&]( const size_t& i ) -> void
+#pragma omp parallel for
+			for ( uint32_t i = 0; i < numVertexes; i++ )
 			{
 				shaderVertex_t *tessVertex = modelTessVertex + i;
 
@@ -1289,16 +1289,15 @@ void Tess_SurfaceIQM( srfIQModel_t *surf ) {
 				VectorCopy( position, tessVertex->xyz );
 
 				Vector2Copy( vertexTexcoord, tessVertex->texCoords );
-			};
-
-			Omp::Tasker( task, surf->num_vertexes );
+			}
 		}
 		else
 		{
 			byte *modelBlendIndex = model->blendIndexes + 4 * firstVertex;
 			byte *modelBlendWeight = model->blendWeights + 4 * firstVertex;
 
-			auto task = [&]( const size_t& i ) -> void
+#pragma omp parallel for
+			for ( uint32_t i = 0; i < numVertexes; i++ )
 			{
 				shaderVertex_t *tessVertex = modelTessVertex + i;
 
@@ -1345,16 +1344,16 @@ void Tess_SurfaceIQM( srfIQModel_t *surf ) {
 				R_TBNtoQtangentsFast( tangent, binormal, normal, tessVertex->qtangents );
 
 				Vector2Copy( vertexTexcoord, tessVertex->texCoords );
-			};
-
-			Omp::Tasker( task, surf->num_vertexes );
+			}
 		}
 	}
 	else
 	{
 		float scale = model->internalScale * backEnd.currentEntity->e.skeleton.scale;
+		const uint32_t numVertexes = surf->num_vertexes;
 
-		auto task = [&]( const size_t& i  ) -> void
+#pragma omp parallel for
+		for ( uint32_t i = 0; i < numVertexes; i++ )
 		{
 			shaderVertex_t *tessVertex = modelTessVertex + i;
 
@@ -1369,9 +1368,7 @@ void Tess_SurfaceIQM( srfIQModel_t *surf ) {
 			R_TBNtoQtangentsFast( vertexTangent, vertexBitangent, vertexNormal, tessVertex->qtangents );
 
 			Vector2Copy( vertexTexcoord, tessVertex->texCoords );
-		};
-
-		Omp::Tasker( task, surf->num_vertexes );
+		}
 	}
 
 	tess.numIndexes  += numIndexes;

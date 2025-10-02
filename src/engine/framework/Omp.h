@@ -36,17 +36,6 @@ void SetupThreads();
 void EnlistThreads();
 void Init();
 int GetThreads();
-
-template <typename T, typename S> void Tasker( const T& task, const S& amount )
-{
-	EnlistThreads();
-
-	#pragma omp parallel for
-	for ( S i = 0; i < amount; i++ )
-	{
-		task( i );
-	}
 }
-};
 
 #endif // COMMON_OMP_H_
