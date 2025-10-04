@@ -1040,6 +1040,9 @@ if (BUILD_CLIENT)
 
     # Generate GLSL include files.
     daemon_embed_files("EngineShaders" "GLSL" "TEXT" "client-objects")
+
+    # Generate media include files.
+    daemon_embed_files("EngineMedia" "MEDIA" "BINARY" "client-objects")
 endif()
 
 if (BUILD_SERVER)

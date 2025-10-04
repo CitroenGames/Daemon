@@ -86,6 +86,13 @@ else()
     include (${ENGINE_DIR}/renderer/src.cmake)
 endif()
 
+set(MEDIA_EMBED_DIR ${ENGINE_DIR}/media)
+set(MEDIA_EMBED_LIST
+	gfx/2d/bigchars.png
+	scripts/engine.shader
+	sound/null.wav
+)
+
 set(GLSL_EMBED_DIR "${ENGINE_DIR}/renderer/glsl_source")
 set(GLSL_EMBED_LIST
     # Common shader libraries
@@ -271,6 +278,8 @@ set(CLIENTBASELIST
 )
 
 set(CLIENTLIST
+    ${DAEMON_EMBEDDED_DIR}/EngineMedia.cpp
+    ${DAEMON_EMBEDDED_DIR}/EngineMedia.h
     ${ENGINE_DIR}/audio/ALObjects.cpp
     ${ENGINE_DIR}/audio/ALObjects.h
     ${ENGINE_DIR}/audio/Audio.cpp
