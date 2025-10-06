@@ -1,3 +1,5 @@
+set(DAEMON_TEXT_EMBEDDER "${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmbedText.cmake")
+
 set(DAEMON_GENERATED_SUBDIR "GeneratedSource")
 set(DAEMON_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/${DAEMON_GENERATED_SUBDIR}")
 
@@ -88,6 +90,8 @@ macro(daemon_embed_files basename slug format targetname)
 		set(inpath "${${embed_source_dir}}/${filename}")
 		set(outpath "${embed_dir}/${filename_symbol}${DAEMON_GENERATED_H_EXT}")
 
+		set_property(SOURCE "${inpath}" APPEND PROPERTY SOURCES  "${DAEMON_TEXT_EMBEDDER}")
+
 		add_custom_command(
 			OUTPUT "${outpath}"
 			COMMAND ${CMAKE_COMMAND}
@@ -95,7 +99,7 @@ macro(daemon_embed_files basename slug format targetname)
 				"-DOUTPUT_FILE=${outpath}"
 				"-DFILE_FORMAT=${format}"
 				"-DVARIABLE_NAME=${filename_symbol}"
-				-P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmbedText.cmake"
+				-P "${DAEMON_TEXT_EMBEDDER}"
 			MAIN_DEPENDENCY ${inpath}
 		)
 
