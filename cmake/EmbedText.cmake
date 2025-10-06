@@ -17,4 +17,17 @@ else()
 	message(FATAL_ERROR "Unknown file format: ${FILE_FORMAT}")
 endif()
 
-file(WRITE ${OUTPUT_FILE} "const unsigned char ${VARIABLE_NAME}[] = {${contents}};\n")
+# Split long lines.
+string(REGEX REPLACE
+	"(0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,0x..,)" "\\1\n"
+	contents "${contents}"
+)
+
+string(REGEX REPLACE ",$" ",\n" contents "${contents}")
+
+file(WRITE ${OUTPUT_FILE}
+	"const unsigned char ${VARIABLE_NAME}[] =\n"
+	"{\n"
+	"${contents}"
+	"};\n"
+)
