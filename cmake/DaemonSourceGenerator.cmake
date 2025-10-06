@@ -1,4 +1,5 @@
 set(DAEMON_TEXT_EMBEDDER "${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmbedText.cmake")
+set(DAEMON_SOURCE_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/DaemonSourceGenerator.cmake")
 
 set(DAEMON_GENERATED_SUBDIR "GeneratedSource")
 set(DAEMON_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/${DAEMON_GENERATED_SUBDIR}")
@@ -67,6 +68,7 @@ macro(daemon_embed_files basename slug format targetname)
 		set(embed_${kind}_src_file "${DAEMON_EMBEDDED_DIR}/${embed_${kind}_basename}")
 		set(embed_${kind}_file "${DAEMON_EMBEDDED_SUBDIR}/${embed_${kind}_basename}")
 		set(embed_${kind}_text "${DAEMON_GENERATED_HEADER}")
+		set_property(SOURCE "${embed_${kind}_src_file}" APPEND PROPERTY SOURCES "${DAEMON_SOURCE_GENERATOR}")
 		set_property(TARGET "${targetname}" APPEND PROPERTY SOURCES "${embed_${kind}_src_file}")
 	endforeach()
 
