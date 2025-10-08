@@ -6,8 +6,8 @@ Dæmon is the standalone engine that powers the multiplayer first person shooter
 
 [![IRC](https://img.shields.io/badge/irc-%23unvanquished--dev-9cf.svg)](https://web.libera.chat/#unvanquished-dev)
 
-| Windows | macOS | Linux |
-|---------|-----|-------|
+| Windows                                                                                                                                            | macOS                                                                                                                                                                                                              | Linux                                                                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [![AppVeyor branch](https://img.shields.io/appveyor/ci/DolceTriade/daemon/master.svg)](https://ci.appveyor.com/project/DolceTriade/daemon/history) | [![Azure branch](https://img.shields.io/azure-devops/build/UnvanquishedDevelopment/51482765-8c0b-4b28-a82c-09554ed6887e/1/master.svg)](https://dev.azure.com/UnvanquishedDevelopment/Daemon/_build?definitionId=1) | [![Azure branch](https://img.shields.io/azure-devops/build/UnvanquishedDevelopment/51482765-8c0b-4b28-a82c-09554ed6887e/1/master.svg)](https://dev.azure.com/UnvanquishedDevelopment/Daemon/_build?definitionId=1) |
 
 ℹ️ We provide ready-to-use downloads for the Unvanquished game on the Unvanquished [download page](https://unvanquished.net/download/), builds of the Dæmon engine are included.
@@ -48,11 +48,42 @@ Required:
 Optional:
 `ncurses`.
 
+### 🐧 Ubuntu / Debian Quick Install
+
+On Ubuntu or Debian-based systems, you can install all required dependencies with a single command:
+
+```bash
+sudo apt update && sudo apt install -y \
+  zlib1g-dev \
+  libgmp-dev \
+  nettle-dev \
+  libcurl4-openssl-dev \
+  libsdl2-dev \
+  libglew-dev \
+  libpng-dev \
+  libjpeg-dev \
+  libwebp-dev \
+  libfreetype6-dev \
+  libopenal-dev \
+  libogg-dev \
+  libvorbis-dev \
+  libopus-dev \
+  libopusfile-dev
+```
+
+This will install all necessary development libraries for building Dæmon from source.
+
+For a minimal (runtime-only) install, you can omit the `-dev` packages and use:
+
+```bash
+sudo apt install -y zlib1g libgmp10 libnettle8 libcurl4 libsdl2-2.0-0 libglew2.2 libpng16-16 libjpeg8 libwebp7 libfreetype6 libopenal1 libogg0 libvorbis0a libopus0 libopusfile0
+```
+
 ### MSYS2
 
 MSYS2 is the recommended way to build using MinGW on a Windows host.
 
-Required packages for 64-bit: `mingw-w64-x86_64-gcc`, `mingw-w64-x86_64-cmake`, `make`  
+Required packages for 64-bit: `mingw-w64-x86_64-gcc`, `mingw-w64-x86_64-cmake`, `make`
 Required packages for 32-bit: `mingw-w64-i686-gcc`, `mingw-w64-i686-cmake`, `make`
 
 ## Downloading the sources for the game engine
@@ -84,9 +115,9 @@ cd Daemon/
 
 ### Visual Studio
 
-  1. Run CMake.
-  2. Choose your compiler.
-  3. Open `Daemon.sln` and compile.
+1. Run CMake.
+2. Choose your compiler.
+3. Open `Daemon.sln` and compile.
 
 ### Linux, macOS, MSYS2
 
